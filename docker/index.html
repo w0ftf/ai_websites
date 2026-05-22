@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okta User Management Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:           #f4f6f9;
+            --surface:      #ffffff;
+            --surface-alt:  #f8f9fb;
+            --border:       #e2e6ed;
+            --border-light: #edf0f5;
+            --text-black:   #0d1117;
+            --text-body:    #374151;
+            --text-mid:     #6b7280;
+            --text-muted:   #9ca3af;
+            --blue:         #2563eb;
+            --blue-dark:    #1d4ed8;
+            --blue-bg:      #eff6ff;
+            --green:        #16a34a;
+            --green-bg:     #f0fdf4;
+            --amber:        #d97706;
+            --amber-bg:     #fffbeb;
+            --red:          #dc2626;
+            --red-bg:       #fef2f2;
+            --purple:       #7c3aed;
+            --purple-bg:    #f5f3ff;
+            --okta-blue:    #007dc1;
+            --font:         'Inter', system-ui, sans-serif;
+            --mono:         'JetBrains Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-body);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        /* ── Layout ── */
+        .page { max-width: 780px; margin: 0 auto; }
+
+        /* ── Header ── */
+        .header {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .header .logo {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--okta-blue), #005fa3);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: 1rem; letter-spacing: -0.5px;
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-black); }
+        .header p  { font-size: 0.8rem; color: var(--text-mid); margin-top: 1px; }
+
+        /* ── Input card ── */
+        .input-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 1.25rem;
+        }
+        .input-card label {
+            display: block; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-mid); text-transform: uppercase;
+            letter-spacing: 0.8px; margin-bottom: 0.5rem;
+        }
+        .input-row { display: flex; gap: 0.6rem; }
+        .input-row textarea {
+            flex: 1; padding: 0.75rem 1rem;
+            border: 1.5px solid var(--border);
+            border-radius: 10px; font-family: var(--font);
+            font-size: 0.9rem; color: var(--text-black);
+            background: var(--surface-alt);
+            outline: none; resize: none; height: 60px;
+            line-height: 1.5; transition: border-color 0.2s;
+        }
+        .input-row textarea:focus { border-color: var(--blue); background: #fff; }
+        .input-row textarea::placeholder { color: var(--text-muted); }
+        .run-btn {
+            padding: 0 1.25rem;
+            background: var(--blue);
+            color: #fff; border: none; border-radius: 10px;
+            font-family: var(--font); font-weight: 600;
+            font-size: 0.9rem; cursor: pointer;
+            white-space: nowrap; transition: background 0.2s;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .run-btn:hover    { background: var(--blue-dark); }
+        .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Example chips ── */
+        .examples { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+        .example-chip {
+            padding: 0.3rem 0.7rem; border-radius: 999px;
+            font-size: 0.74rem; font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--surface-alt); color: var(--text-mid);
+            cursor: pointer; transition: all 0.15s;
+        }
+        .example-chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+
+        /* ── Result area ── */
+        .result-area { display: none; }
+        .result-area.show { display: block; }
+
+        /* ── Steps ── */
+        .steps-title {
+            font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 0.6rem;
+        }
+        .step-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden; margin-bottom: 0.6rem;
+        }
+        .step-header {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.65rem 1rem;
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer; user-select: none;
+        }
+        .step-header:hover { background: var(--border-light); }
+        .step-icon {
+            width: 26px; height: 26px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; flex-shrink: 0;
+        }
+        .step-icon.create { background: var(--blue-bg);   color: var(--blue);   }
+        .step-icon.find   { background: var(--purple-bg); color: var(--purple); }
+        .step-icon.add    { background: var(--green-bg);  color: var(--green);  }
+        .step-icon.warn   { background: var(--amber-bg);  color: var(--amber);  }
+        .step-label { font-size: 0.85rem; font-weight: 600; color: var(--text-black); flex: 1; }
+        .step-status {
+            font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+        }
+        .step-status.ok  { background: var(--green-bg); color: var(--green); }
+        .step-status.err { background: var(--red-bg);   color: var(--red);   }
+        .step-status.mid { background: var(--amber-bg); color: var(--amber); }
+        .step-toggle { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.2s; }
+        .step-toggle.open { transform: rotate(90deg); }
+
+        .step-body { display: none; padding: 0.85rem 1rem; }
+        .step-body.open { display: block; }
+
+        .kv-row {
+            display: flex; gap: 0.5rem; margin-bottom: 0.3rem;
+            font-size: 0.8rem;
+        }
+        .kv-row .kv-key {
+            font-weight: 600; color: var(--text-mid);
+            min-width: 90px; flex-shrink: 0;
+        }
+        .kv-row .kv-val { color: var(--text-body); word-break: break-all; }
+
+        .json-block {
+            background: #1e2330; color: #a8b3c8;
+            border-radius: 8px; padding: 0.75rem 1rem;
+            font-family: var(--mono); font-size: 0.75rem;
+            overflow-x: auto; margin-top: 0.5rem; white-space: pre;
+        }
+        .section-label {
+            font-size: 0.7rem; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.6px;
+            margin: 0.75rem 0 0.35rem;
+        }
+
+        /* ── Summary card ── */
+        .summary-card {
+            background: var(--green-bg);
+            border: 1px solid #bbf7d0; border-radius: 12px;
+            padding: 1rem 1.2rem; margin-top: 0.75rem;
+            display: flex; gap: 0.75rem; align-items: flex-start;
+        }
+        .summary-card.error-card {
+            background: var(--red-bg); border-color: #fecaca;
+        }
+        .summary-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+        .summary-text { font-size: 0.9rem; line-height: 1.6; color: var(--text-body); }
+        .summary-text strong { color: var(--text-black); }
+
+        /* ── Spinner ── */
+        .spinner-wrap {
+            display: none; align-items: center; gap: 0.75rem;
+            padding: 1.25rem; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 12px;
+            font-size: 0.88rem; color: var(--text-mid);
+        }
+        .spinner-wrap.show { display: flex; }
+        .spinner {
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 2.5px solid var(--border);
+            border-top-color: var(--blue);
+            animation: spin 0.8s linear infinite; flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            body { padding: 1rem 0.75rem; }
+            .input-row { flex-direction: column; }
+            .run-btn { padding: 0.75rem; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">Ok</div>
+        <div>
+            <h1>Okta User Management Agent</h1>
+            <p>Natural language &rarr; Okta API &mdash; powered by Claude</p>
+        </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-card">
+        <label>What would you like to do?</label>
+        <div class="input-row">
+            <textarea id="prompt"
+                placeholder="e.g. Add Abe Ramo with email wof@theflux.net to the TheFlux group"></textarea>
+            <button class="run-btn" id="runBtn" onclick="runAgent()">
+                &#9654; Run
+            </button>
+        </div>
+        <div class="examples">
+            <span class="example-chip"
+                  onclick="setPrompt('Add Abe Ramo with email wof@theflux.net to the TheFlux group')">
+                Add user to group
+            </span>
+            <span class="example-chip"
+                  onclick="setPrompt('Create user Jane Doe with email jane.doe@example.com and add her to the Engineering group')">
+                Create &amp; assign to Engineering
+            </span>
+            <span class="example-chip"
+                  onclick="setPrompt('Add john.smith@example.com to the Admins group')">
+                Add existing user to Admins
+            </span>
+        </div>
+    </div>
+
+    <!-- Spinner -->
+    <div class="spinner-wrap" id="spinner">
+        <div class="spinner"></div>
+        <span>Claude is working &mdash; calling Okta APIs&hellip;</span>
+    </div>
+
+    <!-- Results -->
+    <div class="result-area" id="resultArea">
+        <div class="steps-title">Steps taken</div>
+        <div id="stepsList"></div>
+        <div id="summaryBox"></div>
+    </div>
+
+</div>
+
+<script>
+    const TOOL_META = {
+        create_okta_user:      { label: "Create User",        iconClass: "create", icon: "&#43;" },
+        find_okta_user:        { label: "Find User",          iconClass: "find",   icon: "&#128269;" },
+        find_okta_group:       { label: "Find Group",         iconClass: "find",   icon: "&#128101;" },
+        add_user_to_okta_group:{ label: "Add User to Group",  iconClass: "add",    icon: "&#10003;" },
+    };
+
+    function setPrompt(text) {
+        document.getElementById("prompt").value = text;
+        document.getElementById("prompt").focus();
+    }
+
+    function statusClass(code) {
+        if (!code) return "mid";
+        if (code >= 200 && code < 300) return "ok";
+        if (code === 204) return "ok";
+        return "err";
+    }
+
+    function statusLabel(code) {
+        if (!code) return "—";
+        return "HTTP " + code;
+    }
+
+    function esc(s) {
+        const d = document.createElement("div");
+        d.textContent = String(s ?? "");
+        return d.innerHTML;
+    }
+
+    function renderStep(step, idx) {
+        const meta   = TOOL_META[step.tool] || { label: step.tool, iconClass: "find", icon: "?" };
+        const code   = step.result?.status_code;
+        const sClass = statusClass(code);
+        const sLabel = statusLabel(code);
+
+        // Flatten top-level input fields as key-value rows
+        const inputRows = Object.entries(step.input || {})
+            .map(([k, v]) => `<div class="kv-row">
+                <span class="kv-key">${esc(k)}</span>
+                <span class="kv-val">${esc(typeof v === "object" ? JSON.stringify(v) : v)}</span>
+            </div>`).join("");
+
+        const resultJson = JSON.stringify(step.result ?? {}, null, 2);
+
+        return `
+        <div class="step-card" id="step-${idx}">
+            <div class="step-header" onclick="toggleStep(${idx})">
+                <div class="step-icon ${meta.iconClass}">${meta.icon}</div>
+                <span class="step-label">${esc(meta.label)}</span>
+                <span class="step-status ${sClass}">${sLabel}</span>
+                <span class="step-toggle" id="toggle-${idx}">&#9654;</span>
+            </div>
+            <div class="step-body" id="body-${idx}">
+                ${inputRows ? `<div class="section-label">Input</div>${inputRows}` : ""}
+                <div class="section-label">Response</div>
+                <div class="json-block">${esc(resultJson)}</div>
+            </div>
+        </div>`;
+    }
+
+    function toggleStep(idx) {
+        const body   = document.getElementById("body-" + idx);
+        const toggle = document.getElementById("toggle-" + idx);
+        body.classList.toggle("open");
+        toggle.classList.toggle("open");
+    }
+
+    async function runAgent() {
+        const prompt = document.getElementById("prompt").value.trim();
+        if (!prompt) return;
+
+        const btn    = document.getElementById("runBtn");
+        const spin   = document.getElementById("spinner");
+        const result = document.getElementById("resultArea");
+
+        btn.disabled = true;
+        spin.classList.add("show");
+        result.classList.remove("show");
+        document.getElementById("stepsList").innerHTML  = "";
+        document.getElementById("summaryBox").innerHTML = "";
+
+        try {
+            const resp = await fetch("/api/okta", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ prompt }),
+            });
+            const data = await resp.json();
+
+            spin.classList.remove("show");
+            result.classList.add("show");
+
+            if (data.error) {
+                document.getElementById("summaryBox").innerHTML = `
+                    <div class="summary-card error-card">
+                        <div class="summary-icon">&#9888;</div>
+                        <div class="summary-text"><strong>Error:</strong> ${esc(data.error)}</div>
+                    </div>`;
+                return;
+            }
+
+            const steps = data.steps || [];
+            document.getElementById("stepsList").innerHTML =
+                steps.map((s, i) => renderStep(s, i)).join("");
+
+            document.getElementById("summaryBox").innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-icon">&#10003;</div>
+                    <div class="summary-text">${esc(data.summary || "Done.")}</div>
+                </div>`;
+
+        } catch (err) {
+            spin.classList.remove("show");
+            result.classList.add("show");
+            document.getElementById("summaryBox").innerHTML = `
+                <div class="summary-card error-card">
+                    <div class="summary-icon">&#9888;</div>
+                    <div class="summary-text"><strong>Network error:</strong> ${esc(err.message)}</div>
+                </div>`;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // Submit on Ctrl/Cmd+Enter
+    document.getElementById("prompt").addEventListener("keydown", e => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runAgent(); }
+    });
+</script>
+</body>
+</html>
