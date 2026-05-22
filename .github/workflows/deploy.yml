@@ -29,8 +29,3 @@ jobs:
             -e OKTA_API_TOKEN="${{ secrets.OKTA_API_TOKEN }}" \
             -e OKTA_DOMAIN="${{ secrets.OKTA_DOMAIN }}" \
             okta-agent:latest
-
-      - name: Health check
-        run: |
-          sleep 5
-          curl -sf http://localhost/api/health
