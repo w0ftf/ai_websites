@@ -14,14 +14,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t okta-agent:latest .
+        run: sudo docker build -t okta-agent:latest .
 
       - name: Stop existing container
-        run: docker rm -f okta-agent || true
+        run: sudo docker rm -f okta-agent || true
 
       - name: Start container
         run: |
-          docker run -d \
+          sudo docker run -d \
             --name okta-agent \
             --restart unless-stopped \
             -p 80:80 \

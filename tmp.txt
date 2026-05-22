@@ -1,0 +1,25 @@
+# Do something like this to send the adding user part:
+curl -i -X POST \
+  'https://integrator-2383045.okta.com/api/v1/users?activate=true&provider=false&nextLogin=changePassword' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "profile": {
+      "firstName": "Abe",
+      "lastName": "Romo",
+      "email": "wof@theflux.net",
+      "login": "wof@theflux.net"
+    }
+  }'
+
+# After running obtain the group id:
+curl -i -X GET \
+  'https://{youroktadomain}/api/v1/groups?search=profile.name eq "TheFlux"'
+
+# And the user id
+curl -i -X GET \
+  'https://{youroktadomain}/api/v1/users?search=string&filter=string&q=string&after=string&limit=200&sortBy=string&sortOrder=asc&fields=string&expand=classification' \
+  -H 'Content-Type: string'
+
+# Then User ID and Group to add
+  curl -i -X PUT \
+  'https://{youroktadomain}/api/v1/groups/00g1emaKYZTWRYYRRTSK/users/00ub0oNGTSWTBKOLGLNR'
