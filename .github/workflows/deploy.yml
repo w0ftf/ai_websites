@@ -1,9 +1,13 @@
 name: Deploy Okta Agent
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+   workflow_dispatch:
+    # Optional: Define inputs that users can provide when running the workflow
+    inputs:
+      reason:
+        description: 'Reason for manual run'
+        required: true
+        default: 'Routine check'
 
 jobs:
   deploy:
