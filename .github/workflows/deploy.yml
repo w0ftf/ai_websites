@@ -1,0 +1,36 @@
+name: Deploy Okta Agent
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t okta-agent:latest .
+
+      - name: Stop existing container
+        run: docker rm -f okta-agent || true
+
+      - name: Start container
+        run: |
+          docker run -d \
+            --name okta-agent \
+            --restart unless-stopped \
+            -p 80:80 \
+            -e ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+            -e OKTA_API_TOKEN="${{ secrets.OKTA_API_TOKEN }}" \
+            -e OKTA_DOMAIN="${{ secrets.OKTA_DOMAIN }}" \
+            okta-agent:latest
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -sf http://localhost/api/health
